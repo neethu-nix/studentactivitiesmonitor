@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Activity Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f2f5f7;--surf:#fff;--ink:#16212b;--mute:#5a6978;--line:#dce3e9;--acc:#0f766e;--accbg:#e1f3f0;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141a;--surf:#17202a;--ink:#e8edf2;--mute:#97a5b3;--line:#2a3541;--acc:#2dd4bf;--accbg:#12332f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141a;--surf:#17202a;--ink:#e8edf2;--mute:#97a5b3;--line:#2a3541;--acc:#2dd4bf;--accbg:#12332f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+h1{font-size:22px;margin:0;font-weight:600}
+h2{font-size:16px;margin:0 0 12px;font-weight:600}
+.sub{color:var(--mute);font-size:13px}
+select,input,button{font:inherit;color:var(--ink);background:var(--surf);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+button{cursor:pointer;background:var(--acc);color:#fff;border-color:var(--acc);font-weight:500}
+:root:not([data-theme="light"]) button{color:#04211e}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:16px}
+.grid{display:grid;gap:14px;margin-bottom:14px}
+.hero{grid-template-columns:minmax(260px,340px) 1fr}
+.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.ringbox{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ringbox svg{width:100%;max-width:240px}
+.status{margin-top:8px;font-size:13px;padding:3px 10px;border-radius:99px;background:var(--accbg);color:var(--acc);font-weight:500}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+.kpi b{display:block;font-size:26px;font-weight:600;line-height:1.2}
+.kpi span{color:var(--mute);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--mute);margin-top:10px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.row{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin:9px 0;font-size:13px}
+.track{height:10px;background:var(--bg);border-radius:5px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:5px;transition:width .4s}
+.row em{font-style:normal;text-align:right;color:var(--mute)}
+.insights p{margin:0 0 10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:500}
+td.n,th.n{text-align:right}
+.tbl{overflow-x:auto}
+.chip{padding:2px 8px;border-radius:99px;font-size:12px;white-space:nowrap;border:1px solid}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tools input{flex:1;min-width:140px}
+form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;align-items:end}
+label{font-size:12px;color:var(--mute);display:flex;flex-direction:column;gap:3px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.on{opacity:1}
+svg text{fill:var(--mute);font-family:inherit}
+@media (max-width:720px){.hero{grid-template-columns:1fr}.row{grid-template-columns:110px 1fr 58px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1 id="name">Student Activity Dashboard</h1>
+    <div class="sub" id="meta"></div>
+  </div>
+  <label>Student<select id="stu" aria-label="Select student"></select></label>
+</header>
+
+<section class="grid hero">
+  <div class="card ringbox">
+    <svg viewBox="0 0 200 200" id="ring" role="img" aria-label="Activity points progress"></svg>
+    <div class="status" id="status"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div style="display:grid;gap:14px">
+    <div class="kpis" id="kpis"></div>
+    <div class="card insights"><h2>What the data says</h2><div id="ins"></div></div>
+  </div>
+</section>
+
+<section class="grid two">
+  <div class="card"><h2>Profile against batch average</h2><div id="radar"></div><div class="sub">Each axis shows points as a share of that category’s target. Grey is the batch average.</div></div>
+  <div class="card"><h2>Points earned each semester</h2><div id="trend"></div></div>
+</section>
+
+<section class="grid two">
+  <div class="card"><h2>Progress by category</h2><div id="bars"></div></div>
+  <div class="card"><h2>Add an activity</h2>
+    <form id="f">
+      <label>Title<input id="ft" required maxlength="60" placeholder="e.g. Blood donation camp"></label>
+      <label>Category<select id="fc"></select></label>
+      <label>Semester<select id="fs"></select></label>
+      <label>Hours<input id="fh" type="number" min="1" max="200" value="8" required></label>
+      <label>Role<select id="fr"><option>Participant</option><option>Volunteer</option><option>Organiser</option><option>Winner</option></select></label>
+      <button type="submit">Add activity</button>
+    </form>
+    <p class="sub" style="margin-top:12px">Points = hours ÷ 5, weighted by role (Participant ×1, Volunteer ×1.2, Organiser ×1.5, Winner ×2). The 100-point target and category split are sample settings; change them in the script.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Activity log</h2>
+  <div class="tools">
+    <select id="lc" aria-label="Filter by category"></select>
+    <input id="lq" type="search" placeholder="Search activities" aria-label="Search activities">
+  </div>
+  <div class="tbl"><table><thead><tr><th>Activity</th><th>Category</th><th>Sem</th><th>Role</th><th class="n">Hours</th><th class="n">Points</th></tr></thead><tbody id="log"></tbody></table></div>
+</section>
+</div>
+<div id="toast" role="status"></div>
+
+<script>
+const C=[
+{k:'cc',n:'Co-curricular',s:'Co-curr.',c:'#2563eb',t:14,a:['Technical paper presentation','Project expo','Cloud workshop','Coding contest']},
+{k:'ec',n:'Extra-curricular',s:'Extra-curr.',c:'#d97706',t:10,a:['Inter-college cultural fest','Sports meet','Photography contest','Debate round']},
+{k:'cl',n:'Clubs & associations',s:'Clubs',c:'#7c3aed',t:12,a:['Robotics club build','Literary club event','Coding club mentoring','Music club show']},
+{k:'ns',n:'NSS',s:'NSS',c:'#16a34a',t:12,a:['Village adoption camp','Blood donation drive','Tree plantation','Literacy outreach']},
+{k:'nc',n:'NCC',s:'NCC',c:'#b45309',t:12,a:['Annual training camp','Republic Day parade prep','Drill certification','Cadet leadership camp']},
+{k:'da',n:'Department association',s:'Dept.',c:'#db2777',t:10,a:['Association fest volunteer','Alumni talk coordination','Orientation team','Technical newsletter']},
+{k:'oc',n:'Outside college',s:'Outside',c:'#0891b2',t:15,a:['Hackathon at another campus','Internship project','MOOC certification','Startup weekend']},
+{k:'pb',n:'Professional bodies',s:'Prof. bodies',c:'#dc2626',t:15,a:['IEEE student chapter event','CSI chapter workshop','ISTE convention','ACM chapter talk']}];
+const TOTAL=100, SEMS=8, CUR=6, MUL={Participant:1,Volunteer:1.2,Organiser:1.5,Winner:2};
+const STU=[{n:'Anjali Menon',r:'B.Tech CSE · 21CS014',seed:7,b:1},{n:'Rahul Nair',r:'B.Tech ECE · 21EC032',seed:19,b:.7},{n:'Fathima Shirin',r:'B.Tech ME · 21ME005',seed:33,b:1.25}];
+const ROLES=Object.keys(MUL);
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pts=(h,r)=>Math.max(1,Math.round(h*MUL[r]/5));
+function gen(s){const R=rng(s.seed),out=[];
+ C.forEach(c=>{const n=Math.round((1+R()*3)*s.b);
+  for(let i=0;i<n;i++){const h=4+Math.floor(R()*28),r=ROLES[Math.floor(R()*4)];
+   out.push({t:c.a[Math.floor(R()*4)],k:c.k,sem:1+Math.floor(R()*CUR),h,r,p:pts(h,r)})}});
+ return out.sort((a,b)=>a.sem-b.sem)}
+const DATA=STU.map(gen);
+let cur=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const NS='http://www.w3.org/2000/svg';
+
+function stats(){const A=DATA[cur],by={};C.forEach(c=>by[c.k]=0);
+ A.forEach(a=>by[a.k]+=a.p);
+ const total=Object.values(by).reduce((x,y)=>x+y,0),hours=A.reduce((x,a)=>x+a.h,0);
+ const sem=Array.from({length:CUR},()=>({}));A.forEach(a=>{const o=sem[a.sem-1];o[a.k]=(o[a.k]||0)+a.p});
+ return{A,by,total,hours,sem}}
+
+function ring(st){let acc=0;const r=76,L=2*Math.PI*r,sc=Math.max(1,st.total/TOTAL);
+ let h=`<circle cx="100" cy="100" r="${r}" fill="none" stroke="var(--line)" stroke-width="16"/>`;
+ C.forEach(c=>{const len=st.by[c.k]/TOTAL/sc*L;if(!len)return;
+  h+=`<circle cx="100" cy="100" r="${r}" fill="none" stroke="${c.c}" stroke-width="16" stroke-dasharray="${len-1.5} ${L-len+1.5}" stroke-dashoffset="${-acc}" transform="rotate(-90 100 100)"><title>${c.n}: ${st.by[c.k]} points</title></circle>`;acc+=len});
+ h+=`<text x="100" y="104" text-anchor="middle" font-size="38" font-weight="600" style="fill:var(--ink)">${st.total}</text><text x="100" y="124" text-anchor="middle" font-size="12">of ${TOTAL} points</text>`;
+ $('ring').innerHTML=h}
+
+function radar(st){const cx=170,cy=150,R=100,n=C.length;
+ const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n;return[cx+Math.cos(a)*R*v,cy+Math.sin(a)*R*v]};
+ let h=`<svg viewBox="0 0 340 300" width="100%" role="img" aria-label="Radar chart of category completion">`;
+ [.25,.5,.75,1].forEach(g=>h+=`<polygon points="${C.map((_,i)=>pt(i,g).join(',')).join(' ')}" fill="none" stroke="var(--line)"/>`);
+ C.forEach((c,i)=>{const[x,y]=pt(i,1),[lx,ly]=pt(i,1.2);
+  h+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--line)"/><text x="${lx}" y="${ly+4}" text-anchor="${lx<cx-5?'end':lx>cx+5?'start':'middle'}" font-size="11">${c.s}</text>`});
+ const poly=f=>C.map((c,i)=>pt(i,f(c)).join(',')).join(' ');
+ h+=`<polygon points="${poly(c=>.55)}" fill="#8896a4" fill-opacity=".18" stroke="#8896a4" stroke-dasharray="4 3"/>`;
+ h+=`<polygon points="${poly(c=>Math.min(1,st.by[c.k]/c.t))}" fill="var(--acc)" fill-opacity=".25" stroke="var(--acc)" stroke-width="2"/>`;
+ C.forEach((c,i)=>{const[x,y]=pt(i,Math.min(1,st.by[c.k]/c.t));h+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${c.c}"><title>${c.n}: ${st.by[c.k]}/${c.t}</title></circle>`});
+ $('radar').innerHTML=h+'</svg>'}
+
+function trend(st){const W=460,H=250,pl=30,pb=26,pt=14,bw=(W-pl)/CUR;
+ const tot=st.sem.map(o=>Object.values(o).reduce((a,b)=>a+b,0)),mx=Math.max(10,...tot);
+ let h=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Stacked bar chart of points per semester">`;
+ for(let g=0;g<=4;g++){const v=Math.round(mx*g/4),y=H-pb-(H-pb-pt)*g/4;h+=`<line x1="${pl}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pl-5}" y="${y+4}" text-anchor="end" font-size="10">${v}</text>`}
+ st.sem.forEach((o,i)=>{let y=H-pb;const x=pl+i*bw+bw*.2;
+  C.forEach(c=>{const v=o[c.k]||0;if(!v)return;const hh=(H-pb-pt)*v/mx;y-=hh;h+=`<rect x="${x}" y="${y}" width="${bw*.6}" height="${hh}" fill="${c.c}"><title>Sem ${i+1} · ${c.n}: ${v}</title></rect>`});
+  h+=`<text x="${x+bw*.3}" y="${H-8}" text-anchor="middle" font-size="11">S${i+1}</text><text x="${x+bw*.3}" y="${y-4}" text-anchor="middle" font-size="11" style="fill:var(--ink)">${tot[i]||''}</text>`});
+ $('trend').innerHTML=h+'</svg>'}
+
+function bars(st){$('bars').innerHTML=C.map(c=>{const p=st.by[c.k];
+ return`<div class="row"><span><span class="dot" style="background:${c.c}"></span>${c.n}</span><div class="track"><i style="width:${Math.min(100,p/c.t*100)}%;background:${c.c}"></i></div><em>${p} / ${c.t}</em></div>`}).join('')}
+
+function kpis(st){const rank=Math.max(1,Math.round(100-Math.min(99,st.total/TOTAL*70)));
+ const k=[[st.total,'activity points'],[st.A.length,'activities logged'],[st.hours,'hours invested'],[C.filter(c=>st.by[c.k]>=c.t).length+' / '+C.length,'categories at target']];
+ $('kpis').innerHTML=k.map(x=>`<div class="card kpi"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}
+
+function insights(st){const ratio=c=>st.by[c.k]/c.t,s=[...C].sort((a,b)=>ratio(b)-ratio(a)),pace=st.total/CUR,proj=Math.round(pace*SEMS),need=Math.max(0,TOTAL-st.total);
+ const low=s.slice(-2).map(c=>c.n).join(' and ');
+ $('ins').innerHTML=`<p><b>${esc(s[0].n)}</b> is the strongest area at ${Math.round(Math.min(1,ratio(s[0]))*100)}% of its target.</p>
+ <p><b>${esc(low)}</b> are furthest behind. Adding activities there will lift the overall profile fastest.</p>
+ <p>At ${pace.toFixed(1)} points per semester, the projected total by semester ${SEMS} is <b>${proj}</b>${proj>=TOTAL?', which clears the requirement.':`, ${TOTAL-proj} short of the requirement.`}</p>`;
+ const ok=st.total>=TOTAL,onTrack=proj>=TOTAL;
+ $('status').textContent=ok?'Requirement met':onTrack?`On track · ${need} points to go`:`Needs attention · ${need} points to go`}
+
+function log(){const st=stats(),f=$('lc').value,q=$('lq').value.toLowerCase();
+ const rows=st.A.filter(a=>(f==='all'||a.k===f)&&a.t.toLowerCase().includes(q));
+ $('log').innerHTML=rows.length?rows.map(a=>{const c=C.find(x=>x.k===a.k);
+  return`<tr><td>${esc(a.t)}</td><td><span class="chip" style="color:${c.c};border-color:${c.c}">${c.n}</span></td><td>${a.sem}</td><td>${a.r}</td><td class="n">${a.h}</td><td class="n">${a.p}</td></tr>`}).join(''):'<tr><td colspan="6" class="sub">No activities match. Clear the filter or add a new activity.</td></tr>'}
+
+function legend(){$('legend').innerHTML=C.map(c=>`<span><span class="dot" style="background:${c.c}"></span>${c.s}</span>`).join('')}
+
+function render(){const st=stats(),s=STU[cur];
+ $('name').textContent=s.n;$('meta').textContent=s.r+' · Semester '+CUR+' of '+SEMS;
+ ring(st);radar(st);trend(st);bars(st);kpis(st);insights(st);log()}
+
+$('stu').innerHTML=STU.map((s,i)=>`<option value="${i}">${s.n}</option>`).join('');
+$('fc').innerHTML=C.map(c=>`<option value="${c.k}">${c.n}</option>`).join('');
+$('lc').innerHTML='<option value="all">All categories</option>'+C.map(c=>`<option value="${c.k}">${c.n}</option>`).join('');
+$('fs').innerHTML=Array.from({length:CUR},(_,i)=>`<option>${i+1}</option>`).join('');
+$('fs').value=CUR;legend();
+$('stu').onchange=e=>{cur=+e.target.value;render()};
+$('lc').onchange=log;$('lq').oninput=log;
+$('f').onsubmit=e=>{e.preventDefault();
+ const h=+$('fh').value,r=$('fr').value;
+ DATA[cur].push({t:$('ft').value.trim(),k:$('fc').value,sem:+$('fs').value,h,r,p:pts(h,r)});
+ DATA[cur].sort((a,b)=>a.sem-b.sem);
+ e.target.reset();$('fs').value=CUR;render();
+ const t=$('toast');t.textContent='Activity added';t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800)};
+render();
+</script>
+</body>
+</html>
